@@ -19,7 +19,7 @@ This repository provides a Python-based implementation for a Study Buddy applica
 1. **Clone this repository**:
    ```bash
    git clone https://github.com/JelmerzTue/StudyBuddy.git
-   cd study-buddy
+   cd StudyBuddy
    ```
 
 2. **Install dependencies**:

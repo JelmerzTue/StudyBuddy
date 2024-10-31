@@ -445,8 +445,7 @@ class StudyBuddy:
         cv2.destroyAllWindows()
 
 
-# Constants and global instances
-CAPTURE_DEVICE_INDEX = 1
+CAPTURE_DEVICE_INDEX = 0
 face_processor = FaceMeshProcessor(face_mesh)
 
 # Running the StudyBuddy class

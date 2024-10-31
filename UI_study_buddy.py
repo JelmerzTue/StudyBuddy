@@ -228,11 +228,11 @@ class Application:
         self.second_var = tk.StringVar(value='000')
 
         # Load the images
-        self.image_robot_happy = tk.PhotoImage(file="robot-happy.png")
+        self.image_robot_happy = tk.PhotoImage(file="StudyBuddy_images/robot-happy.png")
         self.resized_image_robot_happy = self.image_robot_happy.subsample(5, 5)
-        self.image_robot_sleepy = tk.PhotoImage(file="robot-sleepy.png")
+        self.image_robot_sleepy = tk.PhotoImage(file="StudyBuddy_images/robot-sleepy.png")
         self.resized_image_robot = self.image_robot_sleepy.subsample(5, 5)
-        self.image_robot_confused = tk.PhotoImage(file="robot-confused.png")
+        self.image_robot_confused = tk.PhotoImage(file="StudyBuddy_images/robot-confused.png")
         self.resized_image_robot_confused = self.image_robot_confused.subsample(5, 5)
 
         # Widgets on the main page

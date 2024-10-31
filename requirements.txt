@@ -1,0 +1,10 @@
+mediapipe~=0.10.14
+pandas~=2.1.4
+joblib~=1.2.0
+matplotlib~=3.9.2
+numpy~=1.24.3
+scikit-learn~=1.2.2
+treeinterpreter~=0.2.3
+opencv-python~=4.10.0.84
+openai~=1.37.0
+future~=0.18.3

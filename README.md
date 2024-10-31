@@ -3,6 +3,12 @@
 
 This repository provides a Python-based implementation for a Study Buddy application that can help monitor users studying behaviour, providing real-time feedback to the user.
 
+<p align="center">
+  <img src="StudyBuddy_images/StuddyBuddy.png" alt="Happy Robot" width="400"/>
+  <img src="StudyBuddy_images/StudyBuddy2.png" alt="Neutral Robot" width="400"/>
+  <img src="StudyBuddy_images/StudyBuddy3.png" alt="Confused Robot" width="400"/>
+</p>
+
 ## Requirements
 
 - **Python version**: 3.11

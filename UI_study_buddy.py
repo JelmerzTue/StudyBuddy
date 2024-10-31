@@ -20,7 +20,7 @@ class Application:
         # Create the main application window
         self.window = tk.Tk()
         self.window.title('Study Buddy')
-        self.window.geometry('450x300')
+        self.window.geometry('470x500')
 
         # Load the model
         self.model = jb.load('models/random_forest_model.pkl')
@@ -47,7 +47,7 @@ class Application:
         self.sleepy_counter = 0
         self.distracted_counter = 0
         self.last_expressions = []
-
+        self.sessions_left = tk.StringVar(value='')
         # Start the StudyBuddy run method in a separate thread
         self.study_buddy_thread = threading.Thread(target=self.run_study_buddy)
         self.study_buddy_thread.daemon = True  # Stop the thread when the main program exits
@@ -57,6 +57,7 @@ class Application:
         self.setup_widgets()
 
         # Initially hide the main frames
+        self.time_frame.grid_forget()
         self.main_frame.grid_forget()
         self.finish_frame.grid_forget()
 
@@ -74,20 +75,48 @@ class Application:
                 print("Initializing not successful, quitting program...")
             else:
                 self.study_buddy_thread.start()
-                print("StudyBuddy started!")
+                self.start_button.grid_forget()
                 self.initialize_study_buddy()
                 self.start_label.config(text='Starting, please wait...', font='Calibri 18')
+                print("StudyBuddy started!")
+
         else:
             if not self.study_buddy.work_space_initialized:
                 self.window.after(2000, self.initialize_study_buddy)
                 self.start_label.config(text='Please follow the instructions...', font='Calibri 18')
             else:
                 print("StudyBuddy is initialized!")
-                self.show_main_page()
+                self.show_time_frame()
                 self.study_buddy.imgshow = False
 
+    def initialize_timer(self):
+        selected_duration = self.session_duration_var.get()
+
+        session_map = {
+            "1 Session": 1,
+            "2 Sessions": 2,
+            "3 Sessions": 3,
+            "4 Sessions": 4,
+            "5 Sessions": 5,
+            "6 Sessions": 6,
+            "7 Sessions": 7,
+            "8 Sessions": 8
+        }
+
+        # Set the total number of sessions
+        self.total_sessions = session_map.get(selected_duration, 1)
+        self.sessions_completed = 0  # Track how many sessions are completed
+        self.sessions_left.set(str(self.total_sessions))
+
+        self.start_work()  # Start the first work session
+        self.show_main_page()  # Go to the main page to start the timer
+
+    def show_time_frame(self):
+        self.start_frame.grid_forget()
+        self.time_frame.grid()
+
     def show_main_page(self):
-        self.start_frame.grid_forget()  # Hide start screen
+        self.time_frame.grid_forget()  # Hide start screen
         self.main_frame.grid()  # Show main screen
         self.count_down()  # Start the countdown after showing the main page
         self.update_gui()  # Start updating the GUI with StudyBuddy stats
@@ -96,7 +125,7 @@ class Application:
         self.main_frame.grid_forget()
         self.finish_frame.grid()  # Show the finish frame
 
-    def count_down(self, total_in_seconds=None):
+    def count_down(self, total_in_seconds=None, is_break=False):
         if total_in_seconds is None:
             hour = int(self.hour_var.get())
             minute = int(self.minute_var.get())
@@ -113,10 +142,28 @@ class Application:
             self.second_var.set(f'{second:02}')
 
             # Update the GUI every second
-            self.window.after(1000, self.count_down, total_in_seconds - 1)
+            self.window.after(1000, self.count_down, total_in_seconds - 1, is_break)
         else:
-            # When countdown finished, show finish window
-            self.show_finish_frame()
+            if not is_break:  # Work session complete, start break
+                self.start_break()
+            else:  # Break session complete
+                self.sessions_completed += 1
+                self.sessions_left.set(str(self.total_sessions - self.sessions_completed))
+                if self.sessions_completed < self.total_sessions:
+                    self.start_work()
+                else: # All sessions complete
+                    self.show_finish_frame()
+
+    def start_work(self):
+        # 25 minutes in seconds
+        work_duration = 25 * 60
+        self.count_down(work_duration, is_break=False)
+
+    def start_break(self):
+        # 5 minutes in seconds
+        break_duration = 5 * 60
+        self.count_down(break_duration, is_break=True)
+        self.feedback_label.config(text="Time for a break!")
 
     def update_gui(self):
         # Access the StudyBuddy variables
@@ -149,28 +196,44 @@ class Application:
         # Make new frames for the start, main, and finish screens
         self.start_frame = tk.Frame(self.window)
         self.start_frame.grid(row=0, column=0, sticky='nsew')
-
-
+        self.time_frame = tk.Frame(self.window)
         self.main_frame = tk.Frame(self.window)
-
         self.finish_frame = tk.Frame(self.window)
 
     def setup_widgets(self):
         # Start Frame Widgets
         self.start_label = ttk.Label(self.start_frame, text='Welcome to Study Buddy!', font='Calibri 24 bold')
-        self.start_label.grid(row=0, column=0, pady=100, padx=50)
+        self.start_label.grid(row=0, column=0, pady=100, padx=70)
 
         self.start_button = ttk.Button(self.start_frame, text='Start', command=self.initialize_study_buddy)
         self.start_button.grid(row=1, column=0)
 
+        # Time Frame Widgets
+        self.session_duration_label = ttk.Label(self.time_frame, text='Select amount of sessions:', font='Calibri 18')
+        self.session_duration_label.grid(row=1, column=1, pady=30, padx=100,
+                                         sticky='nsew')
+
+        self.session_duration_var = tk.StringVar(value="amount of sessions")  # Default value
+        self.session_duration_combobox = ttk.Combobox(self.time_frame, textvariable=self.session_duration_var,
+                                                      state="readonly")
+        self.session_duration_combobox['values'] = ['1 Session', '2 Sessions', '3 Sessions', '4 Sessions', '5 Sessions', '6 Sessions', '7 Sessions', '8 Sessions']
+        self.session_duration_combobox.grid(row=2, column=1, pady=10, padx=100,)
+
+        self.confirm_button = ttk.Button(self.time_frame, text="Confirm", command=self.initialize_timer)
+        self.confirm_button.grid(row=3, column=1, pady=20, padx=100,)
+
         # Main Frame Widgets
         self.hour_var = tk.StringVar(value='00')
         self.minute_var = tk.StringVar(value='00')
-        self.second_var = tk.StringVar(value='400')
+        self.second_var = tk.StringVar(value='000')
 
         # Load the images
-        self.image_robot = tk.PhotoImage(file="robot-neutral.png")
-        self.resized_image_robot = self.image_robot.subsample(5, 5)
+        self.image_robot_happy = tk.PhotoImage(file="robot-happy.png")
+        self.resized_image_robot_happy = self.image_robot_happy.subsample(5, 5)
+        self.image_robot_sleepy = tk.PhotoImage(file="robot-sleepy.png")
+        self.resized_image_robot = self.image_robot_sleepy.subsample(5, 5)
+        self.image_robot_confused = tk.PhotoImage(file="robot-confused.png")
+        self.resized_image_robot_confused = self.image_robot_confused.subsample(5, 5)
 
         # Widgets on the main page
         self.label = ttk.Label(self.main_frame, text='Study buddy', font='Calibri 24 bold')
@@ -181,7 +244,10 @@ class Application:
         self.buttonA = ttk.Button(self.main_frame, text='Decision insights', command=self.show_waterfall_chart)
         self.buttonB = ttk.Button(self.main_frame, text='Show Webcam', command=self.show_webcam)
         self.buttonC = ttk.Button(self.main_frame, text='Explain decision', command=self.explain_decision)
-        self.image_robot_label = ttk.Label(self.main_frame, image=self.resized_image_robot)
+        self.buttonD = ttk.Button(self.main_frame, text='OK', command=self.clear_feedback_label)
+        self.image_robot_label = ttk.Label(self.main_frame, image=self.resized_image_robot_happy)
+        self.session_label = tk.Label(self.main_frame, font = ('Calibri 12'), textvariable=self.sessions_left)
+        self.session_left_label = tk.Label(self.main_frame, font=('Calibri 12'), text='sessions left')
         self.hour_lbl = tk.Label(self.main_frame, font=('Arial', 50), textvariable=self.hour_var)
         self.colon1_lbl = tk.Label(self.main_frame, font=('Arial', 50), text=':')
         self.minute_lbl = tk.Label(self.main_frame, font=('Arial', 50), textvariable=self.minute_var)
@@ -190,19 +256,22 @@ class Application:
 
         # Grid configuration for the main frame
         self.main_frame.columnconfigure(tuple(range(8)), weight=1)
-        self.main_frame.rowconfigure(tuple(range(8)), weight=1)
+        self.main_frame.rowconfigure(tuple(range(9)), weight=1)
 
-        # Widget placement
-        self.image_robot_label.grid(row=5, column=1, columnspan=1, rowspan=2)
-        self.feedback_label.grid(row=2, column=3, columnspan=4, rowspan=4)
-        self.buttonA.grid(row=6, column=4)
-        self.buttonB.grid(row=6, column=3)
-        self.buttonC.grid(row=6, column=5)
+        # Widget placement main frame
+        self.image_robot_label.grid(row=5, column=1, rowspan=2, padx=10)
+        self.feedback_label.grid(row=3, column=3, columnspan=4, rowspan=4)
+        self.session_label.grid(row=2, column=2, pady= 10)
+        self.session_left_label.grid(row=2, column=3, pady= 10)
+        self.buttonA.grid(row=8, column=1)
+        self.buttonB.grid(row=8, column=3)
+        self.buttonC.grid(row=8, column=5, pady=10)
+        self.buttonD.grid(row=7, column=5)
         self.hour_lbl.grid(column=1, row=0)
         self.colon1_lbl.grid(column=2, row=0)
-        self.minute_lbl.grid(column=3, row=0)
-        self.colon2_lbl.grid(column=4, row=0)
-        self.second_lbl.grid(column=5, row=0)
+        self.minute_lbl.grid(column=3, row=0, padx=10)
+        self.colon2_lbl.grid(column=4, row=0, padx=10)
+        self.second_lbl.grid(column=5, row=0,padx=10)
 
         # Finish Frame Widgets
         self.finish_label = ttk.Label(self.finish_frame, text="Time's Up!", font='Calibri 24 bold')
@@ -210,6 +279,11 @@ class Application:
 
         self.close_button = ttk.Button(self.finish_frame, text='Close', command=self.window.quit)
         self.close_button.grid(row=2, column=0, pady=10)
+
+    def clear_feedback_label(self):
+        # Clear the label text
+        self.feedback_label.config(text="")
+        self.image_robot_label.config(image=self.resized_image_robot_happy)
 
     def predict_class(self, sample):
         # Make prediction using the model
@@ -292,12 +366,14 @@ class Application:
             if sleepy_count >= min_expressions:
                 self.sleepy_counter += 1
                 self.feedback_user()
+                self.image_robot_label.config(image=self.resized_image_robot_sleepy)
             else:
                 print(f"Sleepy count: {sleepy_count}")
         elif self.current_class == 1:  # Distracted
             if distracted_count >= min_expressions:
                 self.distracted_counter += 1
                 self.feedback_user()
+                self.image_robot_label.config(image=self.resized_image_robot_confused)
             else:
                 print(f"Distracted count: {distracted_count}")
 
@@ -444,7 +520,7 @@ class Application:
         """
 
         last_data_description = f"""Explain in simple terms what user behavior impacted the decision positively 
-        and/ornegatively for the predicted label in less than 50 words.
+        and/or negatively for the predicted label in less than 50 words.
         Example: The openness of your mouth and fast changing pupil movement contributed the most for prediction 
         "focused", indicating it correspond to foccused behaviour."""
 

@@ -1,5 +1,5 @@
 
-# Study Buddy - Blink Detection & Facial Analysis Project
+# Study Buddy - An XAI tool that aids students in self-regulated learning using the pomodoro method.
 
 This repository provides a Python-based implementation for a Study Buddy application that can help monitor users studying behaviour, providing real-time feedback to the user.
 
